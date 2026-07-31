@@ -2,8 +2,7 @@ name: Deploy static site to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -11,12 +10,13 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages-deploy"
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    concurrency:
-      group: "pages-deploy"
-      cancel-in-progress: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,8 +27,7 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        # use npm install because npm ci expects package-lock.json (your repo has bun.lock)
-        run: npm install
+        run: npm install --no-optional
 
       - name: Build site
         run: npm run build
