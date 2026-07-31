@@ -1,4 +1,4 @@
-name: Deploy static site to GitHub Pages (Bun)
+name: Deploy static site to GitHub Pages (npm)
 
 on:
   push:
@@ -18,24 +18,32 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.x'
-
-      - name: Install dependencies with Bun
-        run: bun install
-
-      # run the build using Node so Vite/Esbuild run with Node
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      - name: Install dependencies (robust, npm)
+        run: |
+          set -e
+          echo "Cleaning lockfiles and node_modules if present..."
+          rm -rf node_modules package-lock.json npm-shrinkwrap.json
+          npm cache clean --force || true
+
+          echo "Trying npm install (skip optional native addons)..."
+          if npm install --no-optional --no-audit --no-fund --legacy-peer-deps; then
+            echo "npm install succeeded"
+          else
+            echo "npm install failed — retrying with rebuild..."
+            npm install --no-optional --no-audit --no-fund --legacy-peer-deps || true
+            npm rebuild --update-binary || true
+          fi
+
       - name: Build site
-        run: bun run build
+        run: npm run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
