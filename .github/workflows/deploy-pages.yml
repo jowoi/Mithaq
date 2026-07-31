@@ -26,8 +26,20 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies (skip optional native addons)
-        run: npm install --no-optional
+      - name: Clean & Install dependencies (robust)
+        run: |
+          # remove any lockfile / node_modules remnants, clean npm cache
+          rm -rf node_modules package-lock.json npm-shrinkwrap.json
+          npm cache clean --force || true
+
+          # try a normal install skipping optional native deps
+          if npm install --no-optional --no-audit --no-fund --legacy-peer-deps; then
+            echo "npm install succeeded"
+          else
+            echo "npm install failed — retrying with rebuild..."
+            npm install --no-optional --no-audit --no-fund --legacy-peer-deps || true
+            npm rebuild --update-binary || true
+          fi
 
       - name: Build site
         run: npm run build
