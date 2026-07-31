@@ -1,0 +1,6 @@
+{
+  "name": "ميثاق | منصة الزواج الشرعي الفاخرة",
+  "description": "منصة زواج إسلامية فاخرة وموثوقة لخاطبي الزواج في المملكة العربية السعودية والوطن العربي مع مراعاة أعلى معايير الخصوصية والكرامة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
