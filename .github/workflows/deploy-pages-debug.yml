@@ -1,0 +1,63 @@
+name: Deploy static site to GitHub Pages (npm - debug)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-deploy-debug"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies (robust, npm)
+        run: |
+          set -e
+          echo "Cleaning lockfiles and node_modules if present..."
+          rm -rf node_modules package-lock.json npm-shrinkwrap.json
+          npm cache clean --force || true
+
+          echo "Trying npm install (skip optional native addons)..."
+          if npm install --no-optional --no-audit --no-fund --legacy-peer-deps; then
+            echo "npm install succeeded"
+          else
+            echo "npm install failed — retrying with rebuild..."
+            npm install --no-optional --no-audit --no-fund --legacy-peer-deps || true
+            npm rebuild --update-binary || true
+          fi
+
+      - name: Debug installed bins (CI check)
+        run: |
+          echo "node: $(node -v)"
+          echo "npm: $(npm -v)"
+          echo "Listing node_modules/.bin:" 
+          ls -la node_modules/.bin || true
+          echo "Check vite binary presence:" 
+          if [ -f node_modules/.bin/vite ]; then echo "vite exists"; else echo "vite NOT found"; fi
+
+      - name: Build site
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
